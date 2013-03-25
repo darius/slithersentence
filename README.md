@@ -14,7 +14,6 @@ To use
 1. Initialize database
 
 ```sqlite3 crawl_worldjournal.db < create_table.sqlscript```
-
 2. Run `crawler_wj.py`. 
 
 Results
