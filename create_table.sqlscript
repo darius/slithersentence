@@ -1,0 +1,19 @@
+-- *****************                                                            
+-- Script to create tables for database crawl.db
+-- Run as
+--     sqlite3 crawl_worldjournal.db < create_table.sqlscript
+--
+-- *****************
+DROP TABLE IF EXISTS urls;
+CREATE TABLE urls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url VARCHAR(255),
+    dateadded INTEGER,
+    datecrawledforlinks iINTEGER,
+    hash INTEGER,
+    lookupdate INTEGER,
+    scraped INTEGER,
+    useful INTEGER,
+    UNIQUE (url));
+SELECT * FROM sqlite_master WHERE type='table';
+
