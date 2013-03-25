@@ -11,10 +11,12 @@ V. 0.1, 20130325.
 To use
 ------
 
-1. Initialize database
+ 1. Initialize database:
 
-```sqlite3 crawl_worldjournal.db < create_table.sqlscript```
-2. Run `crawler_wj.py`. 
+```
+    sqlite3 crawl_worldjournal.db < create_table.sqlscript
+```
+ 2. Run `crawler_wj.py`. 
 
 Results
 -------
