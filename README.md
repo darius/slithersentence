@@ -19,7 +19,7 @@ To use
 Results
 -------
 
-Program will begin crawling from [www.worldjournal.com]; it will collect links and then attempt to download each linked-to page into a directory `CRAWLED_PAGES`. 
+Program will begin crawling from www.worldjournal.com; it will collect links and then attempt to download each linked-to page into a directory `CRAWLED_PAGES`. 
 
 Crawled pages are stored with `bz2` compression and using a hash as the body of the file name, to minimize the chance of overwriting. The hash has `worldjournal` prepended to identify the source of the content.
 
