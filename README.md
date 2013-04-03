@@ -8,19 +8,24 @@ Version
 
 V. 0.2, 20130402.
 
-
 To use
 ------
 
-1. Initialize database
+ 1. Initialize database:
 
+```
     sqlite3 crawl_worldjournal.db < create_table.sqlscript
+<<<<<<< HEAD
 2. Create directory for downloads
 
     mkdir CRAWLED_PAGES
 2. Run `downloader.py` and `link_collector.py` alternately. 
  * `downloader.py`: downloads pages and stores them in `CRAWLED_PAGES/`, compressed and using the MD5 hash of the content as the core of the file name; the candidate URLs are taken from the database `crawl_worldjournal.db`
  * `link_collector.py`: collects URLs from downloaded pages and stores them in the database `crawl_worldjournal.db`.
+=======
+```
+ 2. Run `crawler_wj.py`. 
+>>>>>>> ce323096431e10c4d06653d00752c599bb9f73c4
 
 
 New as of this version
