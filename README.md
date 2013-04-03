@@ -3,11 +3,28 @@ slithersentence
 
 Crawling and scraping to collect Chinese sentences. This is a preliminary prototype, directed at a single domain.
 
+Version
+-------
+ 
+V. 0.2, 20130402.
+ 
+ 
+To use
+------
+ 
+1. Initialize database
+```
+    sqlite3 crawl_worldjournal.db < create_table.sqlscript
+```
+
+2. Create directory for downloads
+```
     mkdir CRAWLED_PAGES
-2. Run `downloader.py` and `link_collector.py` alternately. 
+```
+2. Run `downloader.py` and `link_collector.py` alternately.
  * `downloader.py`: downloads pages and stores them in `CRAWLED_PAGES/`, compressed and using the MD5 hash of the content as the core of the file name; the candidate URLs are taken from the database `crawl_worldjournal.db`
  * `link_collector.py`: collects URLs from downloaded pages and stores them in the database `crawl_worldjournal.db`.
-```
+ 
 
 
 New as of this version
