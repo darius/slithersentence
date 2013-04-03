@@ -8,12 +8,13 @@ DROP TABLE IF EXISTS urls;
 CREATE TABLE urls (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     url VARCHAR(255),
-    dateadded INTEGER,
-    datecrawledforlinks iINTEGER,
+    date_url_added INTEGER,
+    date_downloaded INTEGER,
     hash INTEGER,
-    lookupdate INTEGER,
-    scraped INTEGER,
-    useful INTEGER,
-    UNIQUE (url));
+    to_be_crawled_for_content INTEGER,
+    date_crawled_for_links INTEGER,
+    content_useful INTEGER,
+    UNIQUE (url),
+    UNIQUE (hash));
 SELECT * FROM sqlite_master WHERE type='table';
 
