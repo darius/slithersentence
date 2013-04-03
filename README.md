@@ -21,7 +21,6 @@ To use
 2. Run `downloader.py` and `link_collector.py` alternately. 
  * `downloader.py`: downloads pages and stores them in `CRAWLED_PAGES/`, compressed and using the MD5 hash of the content as the core of the file name; the candidate URLs are taken from the database `crawl_worldjournal.db`
  * `link_collector.py`: collects URLs from downloaded pages and stores them in the database `crawl_worldjournal.db`.
-=======
 ```
 
 
