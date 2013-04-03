@@ -15,7 +15,6 @@ To use
 
 ```
     sqlite3 crawl_worldjournal.db < create_table.sqlscript
-<<<<<<< HEAD
 2. Create directory for downloads
 
     mkdir CRAWLED_PAGES
@@ -24,8 +23,6 @@ To use
  * `link_collector.py`: collects URLs from downloaded pages and stores them in the database `crawl_worldjournal.db`.
 =======
 ```
- 2. Run `crawler_wj.py`. 
->>>>>>> ce323096431e10c4d06653d00752c599bb9f73c4
 
 
 New as of this version
