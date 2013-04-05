@@ -6,7 +6,7 @@ Crawling and scraping to collect Chinese sentences. This is a preliminary protot
 Version
 -------
  
-V. 0.2, 20130402.
+V. 0.3, 20130405.
  
  
 To use
@@ -30,7 +30,6 @@ To use
 
 New as of this version
 ----------------------
-1. Download and link-collecting functionality is in separate programs.
 2. Functions are now highly modularized and specialized.
 3. Reduced number of state attributes.
 4. Eliminated the old `verbose` output flag and implemented `logging`.
@@ -47,6 +46,7 @@ To do next
 
 Previous versions
 -----------------
+0.2, 20130402.
 0.1, 20130325.
 
 
