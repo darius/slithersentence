@@ -13,17 +13,42 @@ import datetime
 import sqlite3
 import hashlib
 import bz2
+import logging
 
 url_core = 'worldjournal'
 start_url = 'http://' + url_core + '.com'
 
 class LinkCollector(object):
-    def __init__(self, verbose):
-        self.initialize_state_attributes(verbose)
+    def __init__(self, logging_flag=''):
+        self.initialize_state_attributes()
+        self.set_up_logger(logging_flag)
 
-    def initialize_state_attributes(self, verbose):
-        # start-up flags
-        self.verbose = verbose
+    def set_up_logger(self, logging_flag):
+        '''Setting up of logger is moved to this method for neatness.'''
+        # Set the logging level; standard choices: 
+        # DEBUG, INFO, WARN, ERROR, CRITICAL. Our default is WARN.
+        log_levels = {
+                '-d': logging.DEBUG,
+                '-i': logging.INFO,
+                '-e': logging.ERROR,
+                '-c': logging.CRITICAL}
+        if logging_flag in log_levels:
+            the_level = log_levels[logging_flag]
+        else:
+            the_level = logging.WARN
+        #
+        # Set the application name and logger configuration.
+        # We don't want the .py extension.
+        app_name = __file__.split('.')[0]
+        logging.basicConfig(
+                format='%(asctime)s (' + app_name + '.%(funcName)s:%(lineno)d) '
+                    '%(levelname)s: %(message)s', 
+                datefmt='%Y%d%m_%H:%M:%S_%Z', 
+                filename=app_name+'.log',
+                level=the_level)
+
+    def initialize_state_attributes(self):
+        '''Initialization of attributes is moved to this method for neatness.'''
         # Misc. class attributes
         self.soup = None
         self.cursor = None
@@ -36,23 +61,6 @@ class LinkCollector(object):
         # Timers
         self.crawl_time = 0
         self.now = ''
-
-    def report_issue(self, issue, item, continuing=False):
-        '''Print an issue to STDOUT.
-
-        Print to STDOUT an "issue" (typically an exception), an associated
-        item, and (optionally) whether the process is supposed to continue.
-
-        '''
-        # ggg This will eventually be replaced by logging.
-        if self.verbose:
-            indent = ' ' * 4
-            if continuing:
-                last_word = indent + 'continuing'
-            else:
-                last_word = ''
-            print('\n{0}\n{1}while dealing with: {1}\n{2}\n'.
-                    format(issue, indent, item, last_word))
 
     def summarize_run(self):
         '''Summarize the main events of this crawling run.'''
@@ -108,7 +116,7 @@ class LinkCollector(object):
                     self.total_links_added += 1
                     print('.', end='')
                 except Exception as e:
-                    self.report_issue(e, url, True)
+                    logging.error(str(e) + ' with URL = ' + url)
                     self.count_dicarded_urls += 1
                     print('|', end='')
                 finally:
@@ -116,19 +124,9 @@ class LinkCollector(object):
                     sys.stdout.flush()
             else:
                 self.count_dicarded_urls += 1
-        # In either case, mark record for this file as crawled.
-#        try:
-#            self.cursor = self.cursor.execute(
-#                    '''UPDATE urls
-#                    SET date_crawled_for_links=?
-#                    WHERE hash=?''',
-#                    (self.now, hash) )
-#            self.count_crawled_pages += 1
-#        except Exception as e:
-#            self.report_issue(e, url, True)
-#            self.count_dicarded_urls += 1
 
     def ensure_whole_url(self, url):
+        '''Internal URLs are completed here.'''
         start_of_url = url.split(':')[0]
         if start_of_url != 'http' and start_of_url != 'https':
             whole_url = start_url + url
@@ -143,7 +141,7 @@ class LinkCollector(object):
             link = self.ensure_whole_url(link)
         except Exception as e:
             print('tag:', tag)
-            self.report_issue(e, tag, True)
+            logging.error(str(e) + ' with URL = ' + url)
         return link
 
     def get_hashes(self):
@@ -184,7 +182,7 @@ class LinkCollector(object):
         try:
             self.soup = bs4.BeautifulSoup(page_contents)
         except urllib.request.URLError as e:
-            self.report_issue(e, url, True)
+            logging.error(str(e) + ' with URL = ' + url)
             self.urlerrors += 1
         self.crawl_time += time.time() - crawl_time_start
         url_list = [self.get_url_from_tag(i)
@@ -216,12 +214,12 @@ class LinkCollector(object):
                         (self.now, hash) )
                 self.count_crawled_pages += 1
             except Exception as e:
-                self.report_issue(e, hash, True)
+                logging.error(str(e) + ' with hash = ' + hash)
                 self.count_dicarded_urls += 1
         return len(url_list)
 
-def main(verbose=False):
-    link_collector = LinkCollector(verbose)
+def main(logging_flag=''):
+    link_collector = LinkCollector(logging_flag)
     link_collector.start_time = time.time()
     print('''\nWe print . for a link successfully added and | for '''
             '''failure of any kind:''')
@@ -250,10 +248,7 @@ def main(verbose=False):
             else:
                 print('\nThere are no links to be added.')
     except Exception as e:
-        # ggg Note: once we implement logging, we'll have subtlety in the
-        # seriousness of issues to be reported and/or logged. Then can stop
-        # using verbose = True below.
-        print(e)
+        logging.error(e)
     finally:
         # Even though the use of "with" is supposed to ensure closed cursors
         # and connections, after some problems with locked databases I am
@@ -265,4 +260,4 @@ def main(verbose=False):
     link_collector.summarize_run()
 
 if __name__ == '__main__':
-    main(verbose='-v' in sys.argv)
+    main(sys.argv[-1])

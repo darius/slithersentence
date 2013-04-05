@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # downloader.py
-# 20130401, works
+# 20130402, works
 '''Prototype page-downloader for Chinese sites.
 
 Prototype page-downloader for collecting webpages that are good candidates for
@@ -17,16 +17,42 @@ import datetime
 import sqlite3
 import hashlib
 import bz2
+import logging
 
 url_core = 'worldjournal'
 
 class Downloader(object):
-    def __init__(self, verbose):
-        self.initialize_state_attributes(verbose)
+    def __init__(self, logging_flag):
+        self.initialize_state_attributes()
+        self.set_up_logger(logging_flag)
 
-    def initialize_state_attributes(self, verbose):
-        # start-up flags
-        self.verbose = verbose
+    def set_up_logger(self, logging_flag):
+        '''Setting up of logger is moved to this method for neatness.'''
+        # Set the logging level; standard choices: 
+        # DEBUG, INFO, WARN, ERROR, CRITICAL. WARN is our default.
+        log_levels = {
+                '-d': logging.DEBUG,
+                '-i': logging.INFO,
+                '-e': logging.ERROR,
+                '-c': logging.CRITICAL}
+        if logging_flag in log_levels:
+            the_level = log_levels[logging_flag]
+        else:
+            the_level = logging.WARN
+        #
+        # Set the application name and logger configuration.
+        # We don't want the .py extension.
+        app_name = __file__.split('.')[0]
+        logging.basicConfig(
+                format='%(asctime)s (' + app_name + '.%(funcName)s:%(lineno)d) '
+                    '%(levelname)s: %(message)s', 
+                datefmt='%Y%d%m_%H:%M:%S_%Z', 
+                filename=app_name+'.log',
+                level=the_level)
+
+    def initialize_state_attributes(self):
+        '''Initialization of state attributes is moved to this method for
+        neatness.'''
         # Misc. class attributes
         self.soup = None
         self.hashed_soup = None
@@ -41,22 +67,6 @@ class Downloader(object):
         self.start_time = time.time()
         self.request_time = 0
         self.disk_save_time = 0
-
-    def report_issue(self, issue, item, continuing=False):
-        '''Print an issue to STDOUT.
-
-        Print to STDOUT an "issue" (typically an exception), an associated
-        item, and (optionally) whether the process is supposed to continue.
-
-        '''
-        if self.verbose:
-            indent = ' ' * 4
-            if continuing:
-                last_word = indent + 'continuing'
-            else:
-                last_word = ''
-            print('\n{0}\n{1}while dealing with: {1}\n{2}\n'.
-                    format(issue, indent, item, last_word))
 
     def summarize_run(self):
         '''Summarize the main events of this crawling run.'''
@@ -105,7 +115,7 @@ class Downloader(object):
             self.cursor = self.cursor.execute('''SELECT url FROM urls WHERE '''
                     '''date_downloaded IS NULL;''')
         except Exception as e:
-            print('in get_urls:', e)
+            logging.error(e)
         db_content = self.cursor.fetchall()
         return [i[0] for i in db_content]
 
@@ -115,7 +125,7 @@ class Downloader(object):
         try:
             retrieved_contents = (urllib.request.urlopen(url).  read().strip())
         except urllib.request.URLError as e:
-            print('in request_page:', e)
+            logging.error(str(e) + ' with URL = ' + url)
             self.urlerrors += 1
             print('|', end='')
             return ''
@@ -133,7 +143,7 @@ class Downloader(object):
         if retrieved_contents:
             self.soup = bs4.BeautifulSoup(retrieved_contents)
         else:
-            print('in process_page: retrieved_contents is empty')
+            logging.error('retrieved_contents is empty, with URL = ' + url)
         # Periodically soup.encode() raises recursion errors, hence the use of
         # try block.
         try:
@@ -142,7 +152,7 @@ class Downloader(object):
         except Exception as e:
             self.hashed_soup = None
             self.compressed_soup = None
-            print('in process_page:', e)
+            logging.error(e)
             self.count_discarded_pages += 1
             print('|', end='')
 
@@ -172,14 +182,14 @@ class Downloader(object):
                     self.count_saved += 1
                     print('.', end='')
                 except Exception as e:
-                    print('in store_page:', e)
+                    logging.error(e)
                     self.count_discarded_pages += 1
                     print('|', end='')
                     return
                 finally:
                     self.disk_save_time += time.time() - start_time
         else:
-            self.report_issue('self.compressed_soup is empty', url, True)
+            logging.error('self.compressed_soup is empty, with URL = ' + url)
             return
 
     def update_db(self, url):
@@ -204,7 +214,7 @@ class Downloader(object):
                         VALUES (?, ?, ?, ?)''', 
                         (self.hashed_soup, now, now, want_content))
             except Exception as e:
-                print('in update_db, want_content = 0:', e)
+                logging.error(str(e) + ' with URL = ' + url)
         else:
             want_content = 1
             try:
@@ -217,7 +227,7 @@ class Downloader(object):
                 self.count_prospective_pages += 1
                 self.connection.commit()
             except Exception as e:
-                print('in update_db, want_content = 1:', e)
+                logging.error(str(e) + ' with URL = ' + url)
 
     def cycle_through_fns(self, url):
         '''Calls the three main component methods in this procedure and then
@@ -229,33 +239,51 @@ class Downloader(object):
         self.update_db(url)
         sys.stdout.flush()
 
-def main(verbose=False):
-    downloader = Downloader(verbose)
+def main(logging_flag=''):
+    downloader = Downloader(logging_flag)
     print('''\nWe print . for a page successfully saved and | for '''
             '''failure of any kind:''')
     #
-    #
-    # Deal with URLs retrieved from database
-    counter = 0
+    # The repeat_counter ensures that the while loop below runs at least once.
+    repeat_counter = 0
+    # We use url_core in anticipation of generalizing this code for multiple
+    # sites.
     with sqlite3.connect('crawl_' + url_core + '.db') \
             as downloader.connection:
         downloader.cursor = downloader.connection.cursor()
-        # Deal with main page. This core page is always dealt with 
-        # separately, since saving it is primarily for culling links 
-        # rather than for content as well as links.
+        # Deal with the top-level page, which always contains links but almost
+        # never any unique textual content. This core page is always dealt with 
+        # separately, since saving it is for the sake of culling links 
+        # rather than culling content.
         print('\nFirst we handle the top-level page:')
         url = 'http://' + url_core + '.com'
         downloader.count_prospective_pages += 1
         downloader.cycle_through_fns(url)
-        while not counter or downloader.urlerrors:
+        # Deal with candidate URLs from the database. These pages will
+        # eventually be used for culling both content and links. We use a while
+        # loop to keep open the possibility of dealing a second time with
+        # transient HTTP request failures.
+        while not repeat_counter or downloader.urlerrors:
             downloader.urlerrors = 0
             candidate_url_list = downloader.get_urls()
             # Prepare to display real-time output
-            print('\n\nProspective pages to download number {}:'. 
-                    format(len(candidate_url_list)))
-            for i in candidate_url_list:
-                    downloader.cycle_through_fns(i)
-            counter += 1
+            if candidate_url_list:
+                print('\n\nProspective pages to download number {}:'. 
+                        format(len(candidate_url_list)))
+                for i in candidate_url_list:
+                        downloader.cycle_through_fns(i)
+                repeat_counter += 1
+                if downloader.urlerrors:
+                    # Since we find that most URLErrors do not recur, we attempt
+                    # failing URLs a second time. In the future, we must find 
+                    # a way to ensure that URLs that repeated fail are removed 
+                    # from the cycle.
+                    print('\nNow retrying URLs that had URLErrors.', end='')
+            else:
+                print('\n\nThere are no prospective pages to download. '
+                        'Exiting.')
+    # Although "with" should make this unnecessary; we manually
+    # close the cursor and the connection.
     downloader.cursor.close()
     downloader.connection.close()
     #
@@ -263,4 +291,4 @@ def main(verbose=False):
     downloader.summarize_run()
 
 if __name__ == '__main__':
-    main(verbose='-v' in sys.argv)
+    main(sys.argv[-1])
