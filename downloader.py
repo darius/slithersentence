@@ -277,7 +277,7 @@ def main(logging_flag=''):
                     # failing URLs a second time. In the future, we must find 
                     # a way to ensure that URLs that repeated fail are removed 
                     # from the cycle.
-                    print('\nNow retrying URLs that had URLErrors.', end='')
+                    print('\n\nNow retrying URLs that had URLErrors.', end='')
             else:
                 print('\n\nThere are no prospective pages to download. '
                         'Exiting.')
