@@ -11,7 +11,8 @@ V. 0.31, 20130407.
  
 To use
 ------
- 
+1. Install the `bs4` module from http://www.crummy.com/software/BeautifulSoup/.
+
 1. Initialize database
 ```
     sqlite3 crawl_worldjournal.db < create_table.sqlscript
