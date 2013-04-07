@@ -6,7 +6,7 @@ Crawling and scraping to collect Chinese sentences. This is a preliminary protot
 Version
 -------
  
-V. 0.3, 20130405.
+V. 0.31, 20130407.
  
  
 To use
@@ -33,6 +33,7 @@ New as of this version
 2. Functions are now highly modularized and specialized.
 3. Reduced number of state attributes.
 4. Eliminated the old `verbose` output flag and implemented `logging`.
+1. Fixed error that led to endless loop if no new URLs to be downloaded.
 
 
 To do next
@@ -45,7 +46,9 @@ To do next
 3. Crawler should eventually use threads or independent processes (from shell?) to conduct continuous crawling; manage this with a queue.
 
 Previous versions
------------------
+-------------
+0.3, 20130405.
+
 0.2, 20130402.
 
 0.1, 20130325.

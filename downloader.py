@@ -272,7 +272,6 @@ def main(logging_flag=''):
                         format(len(candidate_url_list)))
                 for i in candidate_url_list:
                         downloader.cycle_through_fns(i)
-                repeat_counter += 1
                 if downloader.urlerrors:
                     # Since we find that most URLErrors do not recur, we attempt
                     # failing URLs a second time. In the future, we must find 
@@ -282,6 +281,7 @@ def main(logging_flag=''):
             else:
                 print('\n\nThere are no prospective pages to download. '
                         'Exiting.')
+            repeat_counter = 1
     # Although "with" should make this unnecessary; we manually
     # close the cursor and the connection.
     downloader.cursor.close()
