@@ -25,7 +25,8 @@ url_core = 'worldjournal'
 
 class Downloader(object):
     def __init__(self, logging_flag):
-        utils.set_up_logger(logging_flag)
+        app_name = __file__.split('.')[0]
+        utils.set_up_logger(app_name, logging_flag)
         # Misc. class attributes
         self.soup = None
         self.hashed_soup = None
