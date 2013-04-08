@@ -51,11 +51,8 @@ class LinkCollector(object):
                         .format(self.count_discarded_urls)))
         count_prospective_pages = (self.count_crawled_pages
                                    + self.count_no_links_found_pages)
-        if count_prospective_pages:
-            percentage = round(100 * self.count_crawled_pages
-                               / count_prospective_pages)
-        else:
-            percentage = 0
+        percentage = utils.percentage(self.count_crawled_pages,
+                                      count_prospective_pages)
         print(indent + ('{0}/{1} = ({2:d}%) pages successfully scraped for '
                         'links,'.format(self.count_crawled_pages,
                                         count_prospective_pages, percentage)))

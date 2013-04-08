@@ -56,14 +56,10 @@ class Downloader(object):
                 format(str(datetime.timedelta(seconds=self.disk_save_time)),
                     100 * self.disk_save_time/elapsed))
         print('Links and pages')
-        if self.count_prospective_pages:
-            percentage = round(100 * self.count_saved / 
-                    self.count_prospective_pages)
-        else:
-            percentage = 0
         print(indent + '{0}/{1} pages = ({2:d}%) stored to disk.'.
                 format(self.count_saved, self.count_prospective_pages, 
-                    percentage))
+                       utils.percentage(self.count_saved,
+                                      self.count_prospective_pages)))
         print('Errors')
         print(indent + '{} pages discarded.'.format(self.count_discarded_pages))
         print(indent + '{} URLErrors.'.  format(self.urlerrors), end='')
