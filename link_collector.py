@@ -102,12 +102,11 @@ class LinkCollector(object):
 
     def ensure_whole_url(self, url):
         '''Internal URLs are completed here.'''
-        start_of_url = url.split(':')[0]
-        if start_of_url != 'http' and start_of_url != 'https':
-            whole_url = start_url + url
+        protocol = url.split(':')[0]
+        if protocol in ('http', 'https'):
+            return url
         else:
-            whole_url = url
-        return whole_url
+            return start_url + url
 
     def get_url_from_tag(self, tag):
         '''From an <a ... href...> tag return the URL alone.'''
