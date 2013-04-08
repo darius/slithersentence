@@ -28,7 +28,7 @@ class LinkCollector(object):
         self.soup = None
         self.cursor = None
         # Counters
-        self.count_dicarded_urls = 0
+        self.count_discarded_urls = 0
         self.count_crawled_pages = 0
         self.count_downloaded_pages = 0
         self.count_no_links_found_pages = 0
@@ -48,7 +48,7 @@ class LinkCollector(object):
         print(indent + '{} links added this run.'.
                 format(self.total_links_added))
         print(indent + '{} non-unique links ignored.'.
-                format(self.count_dicarded_urls))
+                format(self.count_discarded_urls))
         count_prospective_pages = (self.count_crawled_pages +
                 self.count_no_links_found_pages)
         if count_prospective_pages:
@@ -62,8 +62,7 @@ class LinkCollector(object):
         print('Errors')
         print(indent + '{} pages discarded (no unique or usable links found).'.
                 format(self.count_no_links_found_pages))
-        with sqlite3.connect('crawl_' + url_core +
-                '.db') as connection:
+        with sqlite3.connect('crawl_' + url_core + '.db') as connection:
             cursor = connection.cursor()
             cursor = cursor.execute('''SELECT * FROM urls;''')
             print('{} unique records in database'.
@@ -92,13 +91,13 @@ class LinkCollector(object):
                     print('.', end='')
                 except Exception as e:
                     logging.error(str(e) + ' with URL = ' + url)
-                    self.count_dicarded_urls += 1
+                    self.count_discarded_urls += 1
                     print('|', end='')
                 finally:
                     # flush output, since we have had a problem with this
                     sys.stdout.flush()
             else:
-                self.count_dicarded_urls += 1
+                self.count_discarded_urls += 1
 
     def ensure_whole_url(self, url):
         '''Internal URLs are completed here.'''
@@ -160,16 +159,16 @@ class LinkCollector(object):
             self.urlerrors += 1
         self.crawl_time += time.time() - crawl_time_start
         url_list = [self.get_url_from_tag(i)
-                for i in self.soup.select('a[href^="/view"]')]
+                    for i in self.soup.select('a[href^="/view"]')]
         return url_list
 
     def process_page(self, filename, hash):
         '''Open file, decompress, crawl, add links, mark crawled in db.'''
         self.now = datetime.datetime.strftime(datetime.datetime.now(),
-                '%Y-%m-%d %H:%M:%S.%f')
+                                              '%Y-%m-%d %H:%M:%S.%f')
         url_list = []
         with open(os.path.join('CRAWLED_PAGES', filename),
-                'rb') as file_object:
+                  'rb') as file_object:
             page_contents = self.decompress_page(file_object)
             url_list = self.crawl_for_links(page_contents)
             if url_list:
@@ -189,7 +188,7 @@ class LinkCollector(object):
                 self.count_crawled_pages += 1
             except Exception as e:
                 logging.error(str(e) + ' with hash = ' + hash)
-                self.count_dicarded_urls += 1
+                self.count_discarded_urls += 1
         return len(url_list)
 
 def main(logging_flag=''):
@@ -210,13 +209,10 @@ def main(logging_flag=''):
                         format(len(file_hash_list)))
                 for hash, for_content_or_not in file_hash_list:
                     if hash:
-                        if for_content_or_not:
-                            filler = '_'
-                        else:
-                            filler = '_base_page_'
+                        filler = '_' if for_content_or_not else '_base_page_'
                         filename = url_core + filler + hash + '.bz2'
-                        links_found = link_collector.process_page(filename, 
-                                hash)
+                        links_found = link_collector.process_page(filename,
+                                                                  hash)
                     else:
                         link_collector.count_no_links_found_pages += 1
             else:
