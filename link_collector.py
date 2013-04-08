@@ -45,28 +45,28 @@ class LinkCollector(object):
         print('\n\nTiming')
         print(indent + 'Time elapsed: {}.'.format(elapsed_str))
         print('Links and pages')
-        print(indent + '{} links added this run.'.
-                format(self.total_links_added))
-        print(indent + '{} non-unique links ignored.'.
-                format(self.count_discarded_urls))
-        count_prospective_pages = (self.count_crawled_pages +
-                self.count_no_links_found_pages)
+        print(indent + ('{} links added this run.'
+                        .format(self.total_links_added)))
+        print(indent + ('{} non-unique links ignored.'
+                        .format(self.count_discarded_urls)))
+        count_prospective_pages = (self.count_crawled_pages
+                                   + self.count_no_links_found_pages)
         if count_prospective_pages:
-            percentage = round(100 * self.count_crawled_pages /
-                    count_prospective_pages)
+            percentage = round(100 * self.count_crawled_pages
+                               / count_prospective_pages)
         else:
             percentage = 0
-        print(indent + '{0}/{1} = ({2:d}%) pages successfully scraped for '
-                'links,'.format(self.count_crawled_pages,
-                    count_prospective_pages, percentage))
+        print(indent + ('{0}/{1} = ({2:d}%) pages successfully scraped for '
+                        'links,'.format(self.count_crawled_pages,
+                                        count_prospective_pages, percentage)))
         print('Errors')
-        print(indent + '{} pages discarded (no unique or usable links found).'.
-                format(self.count_no_links_found_pages))
+        print(indent + ('{} pages discarded (no unique or usable links found).'
+                        .format(self.count_no_links_found_pages)))
         with sqlite3.connect('crawl_' + url_core + '.db') as connection:
             cursor = connection.cursor()
             cursor = cursor.execute('''SELECT * FROM urls;''')
-            print('{} unique records in database'.
-                    format(len(cursor.fetchall())))
+            print('{} unique records in database'
+                  .format(len(cursor.fetchall())))
             cursor.close()
 
     def add_links_to_db(self, url_list, hash):
@@ -195,7 +195,7 @@ def main(logging_flag=''):
     link_collector = LinkCollector(logging_flag)
     link_collector.start_time = time.time()
     print('''\nWe print . for a link successfully added and | for '''
-            '''failure of any kind:''')
+          '''failure of any kind:''')
     try:
         with sqlite3.connect('crawl_' + url_core + '.db') \
                 as connection:
@@ -205,8 +205,8 @@ def main(logging_flag=''):
             file_hash_list = link_collector.get_hashes()
             if file_hash_list:
                 # Prepare to display real-time output
-                print('\nProspective uncrawled files number {}:'.
-                        format(len(file_hash_list)))
+                print('\nProspective uncrawled files number {}:'
+                      .format(len(file_hash_list)))
                 for hash, for_content_or_not in file_hash_list:
                     if hash:
                         filler = '_' if for_content_or_not else '_base_page_'
