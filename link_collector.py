@@ -30,7 +30,6 @@ class LinkCollector(object):
         app_name = __file__.split('.')[0]
         utils.set_up_logger(app_name, logging_flag)
         # Misc. class attributes
-        self.soup = None
         self.cursor = None
         # Counters
         self.count_discarded_urls = 0
@@ -170,14 +169,13 @@ class LinkCollector(object):
             return
         crawl_time_start = time.time()
         try:
-            self.soup = bs4.BeautifulSoup(page_contents)
+            soup = bs4.BeautifulSoup(page_contents)
         except urllib.request.URLError as e:
             logging.error(str(e) + ' with URL = ' + url)
             self.urlerrors += 1
         self.crawl_time += time.time() - crawl_time_start
-        url_list = [self.get_url_from_tag(i)
-                    for i in self.soup.select('a[href^="/view"]')]
-        return url_list
+        return [self.get_url_from_tag(i)
+                for i in soup.select('a[href^="/view"]')]
 
     def get_url_from_tag(self, tag):
         '''From an <a ... href...> tag return the URL alone.'''
