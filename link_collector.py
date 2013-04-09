@@ -109,7 +109,6 @@ class LinkCollector(object):
         '''Return list of hashes for those files not yet crawled for links.
 
         Assumes open database.
-
         '''
         self.cursor = self.cursor.execute('''SELECT hash, '''
                 '''to_be_crawled_for_content '''
@@ -164,7 +163,6 @@ class LinkCollector(object):
 
         Also, update the database for the URL passed in, so that it
         is not crawled again.
-
         '''
         if not page_contents:
             # ggg note: this will eventually be logged as error
@@ -195,7 +193,6 @@ class LinkCollector(object):
         '''Attempt to add URLs to the database.
 
         Assumes database is open. Assumes url_list exists.
-
         '''
         for url in url_list:
             if url:
