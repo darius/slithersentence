@@ -90,8 +90,7 @@ class LinkCollector(object):
                           .format(len(file_hash_list)))
                     for hash, is_for_content in file_hash_list:
                         if hash:
-                            filler = '_' if is_for_content else '_base_page_'
-                            filename = url_core + filler + hash + '.bz2'
+                            filename = self.name_file(hash, is_for_content)
                             self.process_page(filename, hash)
                         else:
                             self.count_no_links_found_pages += 1
@@ -117,6 +116,10 @@ class LinkCollector(object):
                 '''FROM urls WHERE date_crawled_for_links IS NULL '''
                 '''AND date_downloaded IS NOT NULL;''')
         return [(i[0], i[1]) for i in self.cursor.fetchall()]
+
+    def name_file(self, hash, is_for_content):
+        filler = '_' if is_for_content else '_base_page_'
+        return url_core + filler + hash + '.bz2'
 
     def process_page(self, filename, hash):
         '''Open file, decompress, crawl, add links, mark crawled in db.'''
