@@ -198,7 +198,7 @@ class Downloader(object):
             except Exception as e:
                 logging.error(str(e) + ' with URL = ' + url)
 
-    def cycle_through_fns(self, url):
+    def download(self, url):
         '''Calls the three main component methods in this procedure and then
         ensures the terminal output has been printed to the screen.
         '''
@@ -222,24 +222,23 @@ def main(logging_flag=''):
         # separately, since saving it is for the sake of culling links 
         # rather than culling content.
         print('\nFirst we handle the top-level page:')
-        url = 'http://' + url_core + '.com'
         downloader.count_prospective_pages += 1
-        downloader.cycle_through_fns(url)
+        downloader.download('http://' + url_core + '.com')
         # Deal with candidate URLs from the database. These pages will
         # eventually be used for culling both content and links. We use a while
         # loop to try again on transient HTTP request failures.
         while True:
             downloader.urlerrors = 0
-            candidate_url_list = downloader.get_urls()
+            candidate_urls = downloader.get_urls()
             # Prepare to display real-time output
-            if not candidate_url_list:
+            if not candidate_urls:
                 print('\n\nThere are no prospective pages to download. '
                         'Exiting.')
                 break
             print('\n\nProspective pages to download number {}:'. 
-                    format(len(candidate_url_list)))
-            for i in candidate_url_list:
-                downloader.cycle_through_fns(i)
+                    format(len(candidate_urls)))
+            for url in candidate_urls:
+                downloader.download(url)
             if downloader.urlerrors:
                 # Since we find that most URLErrors do not recur, we keep
                 # trying until they succeed. In the future, we must find a way
