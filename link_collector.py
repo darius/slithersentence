@@ -156,8 +156,8 @@ class LinkCollector(object):
 
         '''
         for url in url_list:
-            # Strip irrelevant reference from URL end; always follows ?
             if url:
+                # Strip irrelevant reference from URL end; always follows ?
                 url = url.split('?')[0]
                 # If relative URL, add prefix
                 url = self.ensure_whole_url(url)
