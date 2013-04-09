@@ -187,6 +187,14 @@ class LinkCollector(object):
             logging.error(str(e) + ' with URL = ' + url)
         return link
 
+    def ensure_whole_url(self, url):
+        '''Internal URLs are completed here.'''
+        protocol = url.split(':')[0]
+        if protocol in ('http', 'https'):
+            return url
+        else:
+            return start_url + url
+
     def add_links_to_db(self, url_list, hash):
         '''Attempt to add URLs to the database.
 
@@ -215,14 +223,6 @@ class LinkCollector(object):
                     sys.stdout.flush()
             else:
                 self.count_discarded_urls += 1
-
-    def ensure_whole_url(self, url):
-        '''Internal URLs are completed here.'''
-        protocol = url.split(':')[0]
-        if protocol in ('http', 'https'):
-            return url
-        else:
-            return start_url + url
 
 if __name__ == '__main__':
     main(sys.argv[-1])
