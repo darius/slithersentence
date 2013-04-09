@@ -117,14 +117,16 @@ class Downloader(object):
         # Periodically soup.encode() raises recursion errors, hence the use of
         # try block.
         try:
-            self.hashed_soup = hashlib.md5(self.soup.encode()).hexdigest()
-            self.compressed_soup = bz2.compress(self.soup.encode())
+            encoded = self.soup.encode()
         except Exception as e:
             self.hashed_soup = None
             self.compressed_soup = None
             logging.error(e)
             self.count_discarded_pages += 1
             print('|', end='')
+        else:
+            self.hashed_soup = hashlib.md5(encoded).hexdigest()
+            self.compressed_soup = bz2.compress(encoded)
 
     def store_page(self, url):
         '''Save webpage to disk and the name of file to database.
