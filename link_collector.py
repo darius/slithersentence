@@ -54,7 +54,7 @@ class LinkCollector(object):
         percentage = utils.percentage(self.count_crawled_pages,
                                       count_prospective_pages)
         print(indent + ('{0}/{1} = ({2:d}%) pages successfully scraped for '
-                        'links,'.format(self.count_crawled_pages,
+                        'links.'.format(self.count_crawled_pages,
                                         count_prospective_pages, percentage)))
         print('Errors')
         print(indent + ('{} pages discarded (no unique or usable links found).'
@@ -141,7 +141,7 @@ class LinkCollector(object):
         '''Generate a list of URLs from the page contents passed in.
 
         Also, update the database for the URL passed in, so that it
-       is not crawled again.
+        is not crawled again.
 
         '''
         if not page_contents:
