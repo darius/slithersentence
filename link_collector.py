@@ -20,6 +20,44 @@ import utils
 url_core = 'worldjournal'
 start_url = 'http://' + url_core + '.com'
 
+def main(logging_flag=''):
+    link_collector = LinkCollector(logging_flag)
+    link_collector.start_time = time.time()
+    print('''\nWe print . for a link successfully added and | for '''
+          '''failure of any kind:''')
+    try:
+        with sqlite3.connect('crawl_' + url_core + '.db') \
+                as connection:
+            link_collector.cursor = connection.cursor()
+            # Get list of hashes and whether for content or not of 
+            # uncrawled pages
+            file_hash_list = link_collector.get_hashes()
+            if file_hash_list:
+                # Prepare to display real-time output
+                print('\nProspective uncrawled files number {}:'
+                      .format(len(file_hash_list)))
+                for hash, for_content_or_not in file_hash_list:
+                    if hash:
+                        filler = '_' if for_content_or_not else '_base_page_'
+                        filename = url_core + filler + hash + '.bz2'
+                        links_found = link_collector.process_page(filename,
+                                                                  hash)
+                    else:
+                        link_collector.count_no_links_found_pages += 1
+            else:
+                print('\nThere are no links to be added.')
+    except Exception as e:
+        logging.error(e)
+    finally:
+        # Even though the use of "with" is supposed to ensure closed cursors
+        # and connections, after some problems with locked databases I am
+        # closing both manually, just to be sure.
+        link_collector.cursor.close()
+        connection.close()
+    #
+    # Report
+    link_collector.summarize_run()
+
 class LinkCollector(object):
     def __init__(self, logging_flag=''):
         app_name = __file__.split('.')[0]
@@ -186,44 +224,6 @@ class LinkCollector(object):
             return url
         else:
             return start_url + url
-
-def main(logging_flag=''):
-    link_collector = LinkCollector(logging_flag)
-    link_collector.start_time = time.time()
-    print('''\nWe print . for a link successfully added and | for '''
-          '''failure of any kind:''')
-    try:
-        with sqlite3.connect('crawl_' + url_core + '.db') \
-                as connection:
-            link_collector.cursor = connection.cursor()
-            # Get list of hashes and whether for content or not of 
-            # uncrawled pages
-            file_hash_list = link_collector.get_hashes()
-            if file_hash_list:
-                # Prepare to display real-time output
-                print('\nProspective uncrawled files number {}:'
-                      .format(len(file_hash_list)))
-                for hash, for_content_or_not in file_hash_list:
-                    if hash:
-                        filler = '_' if for_content_or_not else '_base_page_'
-                        filename = url_core + filler + hash + '.bz2'
-                        links_found = link_collector.process_page(filename,
-                                                                  hash)
-                    else:
-                        link_collector.count_no_links_found_pages += 1
-            else:
-                print('\nThere are no links to be added.')
-    except Exception as e:
-        logging.error(e)
-    finally:
-        # Even though the use of "with" is supposed to ensure closed cursors
-        # and connections, after some problems with locked databases I am
-        # closing both manually, just to be sure.
-        link_collector.cursor.close()
-        connection.close()
-    #
-    # Report
-    link_collector.summarize_run()
 
 if __name__ == '__main__':
     main(sys.argv[-1])
