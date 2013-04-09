@@ -22,40 +22,7 @@ start_url = 'http://' + url_core + '.com'
 
 def main(logging_flag=''):
     link_collector = LinkCollector(logging_flag)
-    link_collector.start_time = time.time()
-    print('''\nWe print . for a link successfully added and | for '''
-          '''failure of any kind:''')
-    try:
-        with sqlite3.connect('crawl_' + url_core + '.db') \
-                as connection:
-            link_collector.cursor = connection.cursor()
-            # Get list of hashes and whether for content or not of 
-            # uncrawled pages
-            file_hash_list = link_collector.get_hashes()
-            if file_hash_list:
-                # Prepare to display real-time output
-                print('\nProspective uncrawled files number {}:'
-                      .format(len(file_hash_list)))
-                for hash, for_content_or_not in file_hash_list:
-                    if hash:
-                        filler = '_' if for_content_or_not else '_base_page_'
-                        filename = url_core + filler + hash + '.bz2'
-                        links_found = link_collector.process_page(filename,
-                                                                  hash)
-                    else:
-                        link_collector.count_no_links_found_pages += 1
-            else:
-                print('\nThere are no links to be added.')
-    except Exception as e:
-        logging.error(e)
-    finally:
-        # Even though the use of "with" is supposed to ensure closed cursors
-        # and connections, after some problems with locked databases I am
-        # closing both manually, just to be sure.
-        link_collector.cursor.close()
-        connection.close()
-    #
-    # Report
+    link_collector.collect_links()
     link_collector.summarize_run()
 
 class LinkCollector(object):
@@ -104,6 +71,41 @@ class LinkCollector(object):
                   .format(len(cursor.fetchall())))
             cursor.close()
 
+    def collect_links(self):
+        self.start_time = time.time()
+        print('''\nWe print . for a link successfully added and | for '''
+              '''failure of any kind:''')
+        try:
+            with sqlite3.connect('crawl_' + url_core + '.db') \
+                    as connection:
+                # The following line is (apparently) just for the sake of the
+                # close() in the finally-clause below:
+                self.cursor = connection.cursor()
+                # Get list of hashes and whether for content or not of 
+                # uncrawled pages
+                file_hash_list = self.get_hashes()
+                if file_hash_list:
+                    # Prepare to display real-time output
+                    print('\nProspective uncrawled files number {}:'
+                          .format(len(file_hash_list)))
+                    for hash, is_for_content in file_hash_list:
+                        if hash:
+                            filler = '_' if is_for_content else '_base_page_'
+                            filename = url_core + filler + hash + '.bz2'
+                            self.process_page(filename, hash)
+                        else:
+                            self.count_no_links_found_pages += 1
+                else:
+                    print('\nThere are no links to be added.')
+        except Exception as e:
+            logging.error(e)
+        finally:
+            # Even though the use of "with" is supposed to ensure closed cursors
+            # and connections, after some problems with locked databases I am
+            # closing both manually, just to be sure.
+            self.cursor.close()
+            connection.close()
+
     def get_hashes(self):
         '''Return list of hashes for those files not yet crawled for links.
 
@@ -114,8 +116,7 @@ class LinkCollector(object):
                 '''to_be_crawled_for_content '''
                 '''FROM urls WHERE date_crawled_for_links IS NULL '''
                 '''AND date_downloaded IS NOT NULL;''')
-        db_content = self.cursor.fetchall()
-        return [(i[0], i[1]) for i in db_content]
+        return [(i[0], i[1]) for i in self.cursor.fetchall()]
 
     def process_page(self, filename, hash):
         '''Open file, decompress, crawl, add links, mark crawled in db.'''
