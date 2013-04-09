@@ -212,9 +212,6 @@ def main(logging_flag=''):
     downloader = Downloader(logging_flag)
     print('''\nWe print . for a page successfully saved and | for '''
             '''failure of any kind:''')
-    #
-    # The repeat_counter ensures that the while loop below runs at least once.
-    repeat_counter = 0
     # We use url_core in anticipation of generalizing this code for multiple
     # sites.
     with sqlite3.connect('crawl_' + url_core + '.db') \
@@ -230,27 +227,27 @@ def main(logging_flag=''):
         downloader.cycle_through_fns(url)
         # Deal with candidate URLs from the database. These pages will
         # eventually be used for culling both content and links. We use a while
-        # loop to keep open the possibility of dealing a second time with
-        # transient HTTP request failures.
-        while not repeat_counter or downloader.urlerrors:
+        # loop to try again on transient HTTP request failures.
+        while True:
             downloader.urlerrors = 0
             candidate_url_list = downloader.get_urls()
             # Prepare to display real-time output
-            if candidate_url_list:
-                print('\n\nProspective pages to download number {}:'. 
-                        format(len(candidate_url_list)))
-                for i in candidate_url_list:
-                    downloader.cycle_through_fns(i)
-                if downloader.urlerrors:
-                    # Since we find that most URLErrors do not recur, we attempt
-                    # failing URLs a second time. In the future, we must find 
-                    # a way to ensure that URLs that repeated fail are removed 
-                    # from the cycle.
-                    print('\n\nNow retrying URLs that had URLErrors.', end='')
-            else:
+            if not candidate_url_list:
                 print('\n\nThere are no prospective pages to download. '
                         'Exiting.')
-            repeat_counter = 1
+                break
+            print('\n\nProspective pages to download number {}:'. 
+                    format(len(candidate_url_list)))
+            for i in candidate_url_list:
+                downloader.cycle_through_fns(i)
+            if downloader.urlerrors:
+                # Since we find that most URLErrors do not recur, we keep
+                # trying until they succeed. In the future, we must find a way
+                # to ensure that URLs that repeatedly fail are removed from
+                # the cycle.
+                print('\n\nNow retrying URLs that had URLErrors.', end='')
+            else:
+                break
     # Although "with" should make this unnecessary; we manually
     # close the cursor and the connection.
     downloader.cursor.close()
