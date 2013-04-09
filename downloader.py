@@ -51,15 +51,15 @@ class Downloader(object):
         print(indent + 'Time elapsed: {}.'.format(elapsed_str))
         print(indent + 'Time spent on HTTP requests: {0} or {1:.2f}%.'.
                 format(str(datetime.timedelta(seconds=self.request_time)),
-                    100 * self.request_time/elapsed))
+                       100 * self.request_time/elapsed))
         print(indent + 'Time spent saving to disk: {0} or {1:.2f}%.'.
                 format(str(datetime.timedelta(seconds=self.disk_save_time)),
-                    100 * self.disk_save_time/elapsed))
+                       100 * self.disk_save_time/elapsed))
         print('Links and pages')
         print(indent + '{0}/{1} pages = ({2:d}%) stored to disk.'.
                 format(self.count_saved, self.count_prospective_pages, 
                        utils.percentage(self.count_saved,
-                                      self.count_prospective_pages)))
+                                        self.count_prospective_pages)))
         print('Errors')
         print(indent + '{} pages discarded.'.format(self.count_discarded_pages))
         print(indent + '{} URLErrors.'.  format(self.urlerrors), end='')
@@ -83,7 +83,7 @@ class Downloader(object):
         '''
         try:
             self.cursor = self.cursor.execute('''SELECT url FROM urls WHERE '''
-                    '''date_downloaded IS NULL;''')
+                                              '''date_downloaded IS NULL;''')
         except Exception as e:
             logging.error(e)
         db_content = self.cursor.fetchall()
@@ -142,8 +142,7 @@ class Downloader(object):
             # We save file first and update database afterwards in update_db(),
             #    to reduce chance of false positives in database.
             if url == 'http://' + url_core + '.com':
-                filename = (url_core + '_base_page_' + self.hashed_soup +
-                        '.bz2')
+                filename = url_core + '_base_page_' + self.hashed_soup + '.bz2'
             else:
                 filename = url_core + '_' + self.hashed_soup + '.bz2'
             with open(os.path.join('CRAWLED_PAGES', filename), 'wb') as f:
@@ -169,7 +168,7 @@ class Downloader(object):
         Assumes open SQLite3 connection.
         '''
         now = datetime.datetime.strftime(datetime.datetime.now(),
-                '%Y-%m-%d %H:%M:%S.%f')
+                                         '%Y-%m-%d %H:%M:%S.%f')
         # Normally the start page of a site will not be crawled for content,
         # only for links. The variable want_content notes this state in the db.
         if url == 'http://' + url_core + '.com':
@@ -241,7 +240,7 @@ def main(logging_flag=''):
                 print('\n\nProspective pages to download number {}:'. 
                         format(len(candidate_url_list)))
                 for i in candidate_url_list:
-                        downloader.cycle_through_fns(i)
+                    downloader.cycle_through_fns(i)
                 if downloader.urlerrors:
                     # Since we find that most URLErrors do not recur, we attempt
                     # failing URLs a second time. In the future, we must find 
