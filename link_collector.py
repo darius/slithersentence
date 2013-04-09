@@ -163,29 +163,28 @@ class LinkCollector(object):
         '''Open file, decompress, crawl, add links, mark crawled in db.'''
         self.now = datetime.datetime.strftime(datetime.datetime.now(),
                                               '%Y-%m-%d %H:%M:%S.%f')
-        url_list = []
         with open(os.path.join('CRAWLED_PAGES', filename),
                   'rb') as file_object:
             page_contents = self.decompress_page(file_object)
-            url_list = self.crawl_for_links(page_contents)
-            if url_list:
-                # Loop through this url_list and add links to db IF unique
-                self.add_links_to_db(url_list, hash)
-            else:
-                self.count_no_links_found_pages += 1 
-                # ggg we should mark this page as having no useful links so 
-                # this process is not repeated.
-            # In either case, mark record for this file as crawled.
-            try:
-                self.cursor = self.cursor.execute(
-                        '''UPDATE urls
-                        SET date_crawled_for_links=?
-                        WHERE hash=?''',
-                        (self.now, hash) )
-                self.count_crawled_pages += 1
-            except Exception as e:
-                logging.error(str(e) + ' with hash = ' + hash)
-                self.count_discarded_urls += 1
+        url_list = self.crawl_for_links(page_contents)
+        if url_list:
+            # Loop through this url_list and add links to db IF unique
+            self.add_links_to_db(url_list, hash)
+        else:
+            self.count_no_links_found_pages += 1 
+            # ggg we should mark this page as having no useful links so 
+            # this process is not repeated.
+        # In either case, mark record for this file as crawled.
+        try:
+            self.cursor = self.cursor.execute(
+                    '''UPDATE urls
+                    SET date_crawled_for_links=?
+                    WHERE hash=?''',
+                    (self.now, hash) )
+            self.count_crawled_pages += 1
+        except Exception as e:
+            logging.error(str(e) + ' with hash = ' + hash)
+            self.count_discarded_urls += 1
         return len(url_list)
 
 def main(logging_flag=''):
