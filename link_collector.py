@@ -66,6 +66,89 @@ class LinkCollector(object):
                   .format(len(cursor.fetchall())))
             cursor.close()
 
+    def get_hashes(self):
+        '''Return list of hashes for those files not yet crawled for links.
+
+        Assumes open database.
+
+        '''
+        self.cursor = self.cursor.execute('''SELECT hash, '''
+                '''to_be_crawled_for_content '''
+                '''FROM urls WHERE date_crawled_for_links IS NULL '''
+                '''AND date_downloaded IS NOT NULL;''')
+        db_content = self.cursor.fetchall()
+        return [(i[0], i[1]) for i in db_content]
+
+    def process_page(self, filename, hash):
+        '''Open file, decompress, crawl, add links, mark crawled in db.'''
+        self.now = datetime.datetime.strftime(datetime.datetime.now(),
+                                              '%Y-%m-%d %H:%M:%S.%f')
+        with open(os.path.join('CRAWLED_PAGES', filename),
+                  'rb') as file_object:
+            page_contents = self.decompress_page(file_object)
+        url_list = self.crawl_for_links(page_contents)
+        if url_list:
+            # Loop through this url_list and add links to db IF unique
+            self.add_links_to_db(url_list, hash)
+        else:
+            self.count_no_links_found_pages += 1 
+            # ggg we should mark this page as having no useful links so 
+            # this process is not repeated.
+        # In either case, mark record for this file as crawled.
+        try:
+            self.cursor = self.cursor.execute(
+                    '''UPDATE urls
+                    SET date_crawled_for_links=?
+                    WHERE hash=?''',
+                    (self.now, hash) )
+            self.count_crawled_pages += 1
+        except Exception as e:
+            logging.error(str(e) + ' with hash = ' + hash)
+            self.count_discarded_urls += 1
+        return len(url_list)
+
+    def decompress_page(self, file_object):
+        '''Decompress a saved page and return its contents.'''
+        try:
+            file_contents = bz2.decompress(file_object.read())
+        except Exception as e:
+            print('in decompress_page:', e)
+            return
+        self.count_downloaded_pages += 1
+        return file_contents
+
+    def crawl_for_links(self, page_contents):
+        '''Generate a list of URLs from the page contents passed in.
+
+        Also, update the database for the URL passed in, so that it
+        is not crawled again.
+
+        '''
+        if not page_contents:
+            # ggg note: this will eventually be logged as error
+            print('The page contents have been returned empty.\n')
+            return
+        crawl_time_start = time.time()
+        try:
+            self.soup = bs4.BeautifulSoup(page_contents)
+        except urllib.request.URLError as e:
+            logging.error(str(e) + ' with URL = ' + url)
+            self.urlerrors += 1
+        self.crawl_time += time.time() - crawl_time_start
+        url_list = [self.get_url_from_tag(i)
+                    for i in self.soup.select('a[href^="/view"]')]
+        return url_list
+
+    def get_url_from_tag(self, tag):
+        '''From an <a ... href...> tag return the URL alone.'''
+        try:
+            link = tag.attrs['href']
+            link = self.ensure_whole_url(link)
+        except Exception as e:
+            print('tag:', tag)
+            logging.error(str(e) + ' with URL = ' + url)
+        return link
+
     def add_links_to_db(self, url_list, hash):
         '''Attempt to add URLs to the database.
 
@@ -103,89 +186,6 @@ class LinkCollector(object):
             return url
         else:
             return start_url + url
-
-    def get_url_from_tag(self, tag):
-        '''From an <a ... href...> tag return the URL alone.'''
-        try:
-            link = tag.attrs['href']
-            link = self.ensure_whole_url(link)
-        except Exception as e:
-            print('tag:', tag)
-            logging.error(str(e) + ' with URL = ' + url)
-        return link
-
-    def get_hashes(self):
-        '''Return list of hashes for those files not yet crawled for links.
-
-        Assumes open database.
-
-        '''
-        self.cursor = self.cursor.execute('''SELECT hash, '''
-                '''to_be_crawled_for_content '''
-                '''FROM urls WHERE date_crawled_for_links IS NULL '''
-                '''AND date_downloaded IS NOT NULL;''')
-        db_content = self.cursor.fetchall()
-        return [(i[0], i[1]) for i in db_content]
-
-    def decompress_page(self, file_object):
-        '''Decompress a saved page and return its contents.'''
-        try:
-            file_contents = bz2.decompress(file_object.read())
-        except Exception as e:
-            print('in decompress_page:', e)
-            return
-        self.count_downloaded_pages += 1
-        return file_contents
-
-    def crawl_for_links(self, page_contents):
-        '''Generate a list of URLs from the page contents passed in.
-
-        Also, update the database for the URL passed in, so that it
-        is not crawled again.
-
-        '''
-        if not page_contents:
-            # ggg note: this will eventually be logged as error
-            print('The page contents have been returned empty.\n')
-            return
-        crawl_time_start = time.time()
-        try:
-            self.soup = bs4.BeautifulSoup(page_contents)
-        except urllib.request.URLError as e:
-            logging.error(str(e) + ' with URL = ' + url)
-            self.urlerrors += 1
-        self.crawl_time += time.time() - crawl_time_start
-        url_list = [self.get_url_from_tag(i)
-                    for i in self.soup.select('a[href^="/view"]')]
-        return url_list
-
-    def process_page(self, filename, hash):
-        '''Open file, decompress, crawl, add links, mark crawled in db.'''
-        self.now = datetime.datetime.strftime(datetime.datetime.now(),
-                                              '%Y-%m-%d %H:%M:%S.%f')
-        with open(os.path.join('CRAWLED_PAGES', filename),
-                  'rb') as file_object:
-            page_contents = self.decompress_page(file_object)
-        url_list = self.crawl_for_links(page_contents)
-        if url_list:
-            # Loop through this url_list and add links to db IF unique
-            self.add_links_to_db(url_list, hash)
-        else:
-            self.count_no_links_found_pages += 1 
-            # ggg we should mark this page as having no useful links so 
-            # this process is not repeated.
-        # In either case, mark record for this file as crawled.
-        try:
-            self.cursor = self.cursor.execute(
-                    '''UPDATE urls
-                    SET date_crawled_for_links=?
-                    WHERE hash=?''',
-                    (self.now, hash) )
-            self.count_crawled_pages += 1
-        except Exception as e:
-            logging.error(str(e) + ' with hash = ' + hash)
-            self.count_discarded_urls += 1
-        return len(url_list)
 
 def main(logging_flag=''):
     link_collector = LinkCollector(logging_flag)
